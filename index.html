@@ -3,23 +3,431 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>Five Year Journal</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: Georgia, serif;
+            background: #f5f0e8;
+            color: #1a1a1a;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
+            flex-direction: column;
         }
-        h1 {
-            color: #333;
+
+        /* ── Nav bar ── */
+        nav {
+            background: #1a1a1a;
+            color: #f5f0e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+        }
+
+        nav .title {
+            font-size: 1rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-family: Arial, sans-serif;
+            font-weight: normal;
+        }
+
+        nav .today-btn {
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            padding: 0.3rem 0.8rem;
+            background: transparent;
+            color: #f5f0e8;
+            border: 1px solid rgba(245,240,232,0.4);
+            border-radius: 2px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        nav .today-btn:hover { background: rgba(245,240,232,0.1); }
+
+        /* ── Page ── */
+        .page {
+            max-width: 680px;
+            width: 100%;
+            margin: 2.5rem auto;
+            background: #fffdf8;
+            border: 1px solid #d8d0c0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08), 2px 2px 0 #e8e0d0;
+            padding: 0;
+            flex: 1;
+        }
+
+        /* ── Page header ── */
+        .page-header {
+            border-bottom: 2px solid #1a1a1a;
+            padding: 1.8rem 2.5rem 1.4rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .page-header .day-of-year {
+            font-family: Arial, sans-serif;
+            font-size: 0.75rem;
+            color: #999;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .page-header .month-day {
+            font-size: 2.2rem;
+            font-weight: normal;
+            letter-spacing: -0.01em;
+            line-height: 1;
+        }
+
+        .page-header .weekday {
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.3rem;
+            letter-spacing: 0.05em;
+        }
+
+        .page-nav {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .page-nav button {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-nav button:hover { background: #f0ece4; border-color: #999; }
+
+        /* ── Year rows ── */
+        .year-rows {
+            padding: 0 2.5rem;
+        }
+
+        .year-row {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid #e0d8cc;
+            padding: 1.1rem 0;
+            gap: 1.2rem;
+        }
+
+        .year-row:last-child {
+            border-bottom: none;
+        }
+
+        .year-label {
+            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            font-weight: bold;
+            color: #aaa;
+            letter-spacing: 0.05em;
+            width: 2.8rem;
+            flex-shrink: 0;
+            padding-top: 0.15rem;
+            user-select: none;
+        }
+
+        .year-row.current-year .year-label {
+            color: #1a1a1a;
+        }
+
+        .year-entry {
+            flex: 1;
+            position: relative;
+        }
+
+        .year-entry textarea {
+            width: 100%;
+            font-family: Georgia, serif;
+            font-size: 1rem;
+            line-height: 1.55;
+            border: none;
+            outline: none;
+            background: transparent;
+            resize: none;
+            color: #1a1a1a;
+            overflow: hidden;
+            /* single line by default, grows with content */
+            height: 1.55em;
+            min-height: 1.55em;
+            display: block;
+        }
+
+        .year-entry textarea::placeholder {
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .year-row:not(.current-year) .year-entry textarea {
+            color: #555;
+        }
+
+        /* saved flash */
+        .save-indicator {
+            position: absolute;
+            right: 0;
+            top: 0;
+            font-family: Arial, sans-serif;
+            font-size: 0.7rem;
+            color: #aaa;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .save-indicator.show { opacity: 1; }
+
+        /* ── Page footer ── */
+        .page-footer {
+            border-top: 1px solid #e0d8cc;
+            padding: 0.8rem 2.5rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: #bbb;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 720px) {
+            .page { margin: 1rem; }
+            .page-header, .year-rows, .page-footer { padding-left: 1.2rem; padding-right: 1.2rem; }
         }
     </style>
 </head>
 <body>
-    <h1>Hello World</h1>
+
+<nav>
+    <span class="title">Five Year Journal</span>
+    <button class="today-btn" onclick="goToToday()">Today</button>
+</nav>
+
+<div class="page">
+    <div class="page-header">
+        <div>
+            <div class="day-of-year" id="dayOfYear"></div>
+            <div class="month-day" id="monthDay"></div>
+            <div class="weekday" id="weekday"></div>
+        </div>
+        <div class="page-nav">
+            <button onclick="navigate(-1)" title="Previous day">&#8592;</button>
+            <button onclick="navigate(1)" title="Next day">&#8594;</button>
+        </div>
+    </div>
+
+    <div class="year-rows" id="yearRows"></div>
+
+    <div class="page-footer">
+        <span>Entries save automatically</span>
+        <span id="footerFill"></span>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'fiveYearJournal';
+    const YEARS = 5;
+
+    // currentDate is the M/D being viewed (month 0-indexed, day 1-indexed)
+    // We store just month+day so it's year-agnostic navigation
+    let viewMonth, viewDay;
+
+    function getData() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch { return {}; }
+    }
+
+    function setData(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function getEntry(year, month, day) {
+        const data = getData();
+        const key = `${month}-${day}`;
+        return (data[key] && data[key][year]) || '';
+    }
+
+    function setEntry(year, month, day, text) {
+        const data = getData();
+        const key = `${month}-${day}`;
+        if (!data[key]) data[key] = {};
+        data[key][year] = text;
+        setData(data);
+    }
+
+    function startYear() {
+        // The 5 years ending with the current year
+        return new Date().getFullYear() - YEARS + 1;
+    }
+
+    function currentYear() {
+        return new Date().getFullYear();
+    }
+
+    function dayOfYear(month, day) {
+        // month is 0-indexed
+        const d = new Date(2024, month, day); // 2024 = leap year, safe for Feb 29
+        const start = new Date(2024, 0, 1);
+        return Math.round((d - start) / 86400000) + 1;
+    }
+
+    function monthName(month) {
+        return new Date(2000, month, 1).toLocaleString('en-US', { month: 'long' });
+    }
+
+    function weekdayForDate(month, day) {
+        // Use current year for weekday (changes each year, just show current)
+        const year = currentYear();
+        return new Date(year, month, day).toLocaleString('en-US', { weekday: 'long' });
+    }
+
+    function autoResize(ta) {
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+    }
+
+    function render() {
+        // Header
+        document.getElementById('dayOfYear').textContent =
+            `Day ${dayOfYear(viewMonth, viewDay)}`;
+        document.getElementById('monthDay').textContent =
+            `${monthName(viewMonth)} ${viewDay}`;
+        document.getElementById('weekday').textContent =
+            weekdayForDate(viewMonth, viewDay);
+
+        // Year rows
+        const container = document.getElementById('yearRows');
+        container.innerHTML = '';
+
+        const base = startYear();
+        const thisYear = currentYear();
+        let filled = 0, total = 0;
+
+        for (let i = 0; i < YEARS; i++) {
+            const year = base + i;
+            const text = getEntry(year, viewMonth, viewDay);
+            if (text.trim()) filled++;
+            total++;
+
+            const isCurrent = year === thisYear;
+
+            const row = document.createElement('div');
+            row.className = 'year-row' + (isCurrent ? ' current-year' : '');
+
+            const label = document.createElement('div');
+            label.className = 'year-label';
+            label.textContent = year;
+
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'year-entry';
+
+            const ta = document.createElement('textarea');
+            ta.rows = 1;
+            ta.value = text;
+            ta.placeholder = isCurrent ? 'Write your line for today…' : '';
+            // Past/future years are editable but dimmed
+            ta.dataset.year = year;
+
+            const indicator = document.createElement('span');
+            indicator.className = 'save-indicator';
+            indicator.textContent = 'saved';
+
+            let saveTimer;
+            ta.addEventListener('input', () => {
+                autoResize(ta);
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(() => {
+                    setEntry(year, viewMonth, viewDay, ta.value);
+                    indicator.classList.add('show');
+                    setTimeout(() => indicator.classList.remove('show'), 1200);
+                    updateFooter();
+                }, 400);
+            });
+
+            // Resize on load
+            setTimeout(() => autoResize(ta), 0);
+
+            entryDiv.appendChild(ta);
+            entryDiv.appendChild(indicator);
+            row.appendChild(label);
+            row.appendChild(entryDiv);
+            container.appendChild(row);
+        }
+
+        updateFooter();
+
+        // Focus current year's textarea
+        const textareas = container.querySelectorAll('textarea');
+        const currentIdx = currentYear() - base;
+        if (currentIdx >= 0 && currentIdx < textareas.length) {
+            // Only auto-focus if it's today's date
+            const today = new Date();
+            if (viewMonth === today.getMonth() && viewDay === today.getDate()) {
+                textareas[currentIdx].focus();
+                const len = textareas[currentIdx].value.length;
+                textareas[currentIdx].setSelectionRange(len, len);
+            }
+        }
+    }
+
+    function updateFooter() {
+        const base = startYear();
+        let filled = 0;
+        for (let i = 0; i < YEARS; i++) {
+            if (getEntry(base + i, viewMonth, viewDay).trim()) filled++;
+        }
+        document.getElementById('footerFill').textContent =
+            filled === 0 ? '' : `${filled} of ${YEARS} years`;
+    }
+
+    function navigate(delta) {
+        // Move by delta days
+        // Use a non-leap reference year except for Feb 29
+        const d = new Date(2024, viewMonth, viewDay);
+        d.setDate(d.getDate() + delta);
+        viewMonth = d.getMonth();
+        viewDay = d.getDate();
+        render();
+        window.scrollTo(0, 0);
+    }
+
+    function goToToday() {
+        const today = new Date();
+        viewMonth = today.getMonth();
+        viewDay = today.getDate();
+        render();
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', e => {
+        // Only navigate if no textarea is focused
+        if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowLeft') navigate(-1);
+        if (e.key === 'ArrowRight') navigate(1);
+    });
+
+    // Init
+    const today = new Date();
+    viewMonth = today.getMonth();
+    viewDay = today.getDate();
+    render();
+</script>
 </body>
 </html>
