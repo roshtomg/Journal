@@ -3,491 +3,431 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journal</title>
+    <title>Five Year Journal</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: Georgia, serif;
-            background: #f9f6f1;
-            color: #2c2c2c;
+            background: #f5f0e8;
+            color: #1a1a1a;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        header {
-            background: #2c2c2c;
-            color: #f9f6f1;
-            padding: 1rem 2rem;
+        /* ── Nav bar ── */
+        nav {
+            background: #1a1a1a;
+            color: #f5f0e8;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0.75rem 1.5rem;
         }
 
-        header h1 {
-            font-size: 1.5rem;
+        nav .title {
+            font-size: 1rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-family: Arial, sans-serif;
+            font-weight: normal;
+        }
+
+        nav .today-btn {
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            padding: 0.3rem 0.8rem;
+            background: transparent;
+            color: #f5f0e8;
+            border: 1px solid rgba(245,240,232,0.4);
+            border-radius: 2px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        nav .today-btn:hover { background: rgba(245,240,232,0.1); }
+
+        /* ── Page ── */
+        .page {
+            max-width: 680px;
+            width: 100%;
+            margin: 2.5rem auto;
+            background: #fffdf8;
+            border: 1px solid #d8d0c0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08), 2px 2px 0 #e8e0d0;
+            padding: 0;
+            flex: 1;
+        }
+
+        /* ── Page header ── */
+        .page-header {
+            border-bottom: 2px solid #1a1a1a;
+            padding: 1.8rem 2.5rem 1.4rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .page-header .day-of-year {
+            font-family: Arial, sans-serif;
+            font-size: 0.75rem;
+            color: #999;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .page-header .month-day {
+            font-size: 2.2rem;
+            font-weight: normal;
+            letter-spacing: -0.01em;
+            line-height: 1;
+        }
+
+        .page-header .weekday {
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.3rem;
             letter-spacing: 0.05em;
         }
 
-        header .date {
-            font-size: 0.9rem;
-            opacity: 0.7;
-            font-family: Arial, sans-serif;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        /* New Entry */
-        .new-entry {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .new-entry h2 {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            color: #666;
-            font-family: Arial, sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .new-entry input[type="text"] {
-            width: 100%;
-            font-size: 1.2rem;
-            font-family: Georgia, serif;
-            border: none;
-            border-bottom: 1px solid #ddd;
-            padding: 0.4rem 0;
-            margin-bottom: 1rem;
-            outline: none;
-            background: transparent;
-        }
-
-        .new-entry input[type="text"]:focus {
-            border-bottom-color: #2c2c2c;
-        }
-
-        .new-entry textarea {
-            width: 100%;
-            min-height: 140px;
-            font-size: 1rem;
-            font-family: Georgia, serif;
-            line-height: 1.7;
-            border: none;
-            outline: none;
-            resize: vertical;
-            background: transparent;
-        }
-
-        .new-entry .actions {
+        .page-nav {
             display: flex;
-            justify-content: flex-end;
-            margin-top: 1rem;
             gap: 0.5rem;
-        }
-
-        /* Buttons */
-        button {
-            cursor: pointer;
-            font-family: Arial, sans-serif;
-            font-size: 0.85rem;
-            border: none;
-            border-radius: 3px;
-            padding: 0.5rem 1.1rem;
-        }
-
-        .btn-primary {
-            background: #2c2c2c;
-            color: #fff;
-        }
-
-        .btn-primary:hover { background: #444; }
-
-        .btn-ghost {
-            background: transparent;
-            color: #888;
-            border: 1px solid #ddd;
-        }
-
-        .btn-ghost:hover { background: #f0f0f0; }
-
-        .btn-danger {
-            background: transparent;
-            color: #c0392b;
-            border: 1px solid #e8c4c0;
-        }
-
-        .btn-danger:hover { background: #fdf0ef; }
-
-        /* Entries list */
-        .entries-header {
-            display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
         }
 
-        .entries-header h2 {
+        .page-nav button {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 2px;
             font-size: 1rem;
-            color: #666;
-            font-family: Arial, sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .search-input {
-            font-family: Arial, sans-serif;
-            font-size: 0.85rem;
-            padding: 0.4rem 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            outline: none;
-            width: 200px;
-            background: #fff;
-        }
-
-        .search-input:focus { border-color: #2c2c2c; }
-
-        .empty {
-            text-align: center;
-            color: #aaa;
-            font-family: Arial, sans-serif;
-            padding: 3rem 0;
-            font-size: 0.95rem;
-        }
-
-        /* Entry card */
-        .entry-card {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 1.2rem 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: box-shadow 0.15s;
-        }
-
-        .entry-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-        .entry-card .meta {
+            cursor: pointer;
+            color: #555;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-
-        .entry-card .entry-date {
-            font-size: 0.8rem;
-            color: #999;
-            font-family: Arial, sans-serif;
-        }
-
-        .entry-card .entry-actions {
-            display: flex;
-            gap: 0.4rem;
-        }
-
-        .entry-card .entry-actions button {
-            padding: 0.2rem 0.6rem;
-            font-size: 0.78rem;
-        }
-
-        .entry-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.4rem;
-        }
-
-        .entry-card h3.untitled {
-            color: #aaa;
-            font-style: italic;
-        }
-
-        .entry-card .entry-preview {
-            font-size: 0.9rem;
-            color: #666;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-        }
-
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 100;
             align-items: center;
             justify-content: center;
         }
 
-        .modal-overlay.open { display: flex; }
+        .page-nav button:hover { background: #f0ece4; border-color: #999; }
 
-        .modal {
-            background: #fff;
-            border-radius: 4px;
-            width: 90%;
-            max-width: 680px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 2rem;
+        /* ── Year rows ── */
+        .year-rows {
+            padding: 0 2.5rem;
+        }
+
+        .year-row {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid #e0d8cc;
+            padding: 1.1rem 0;
+            gap: 1.2rem;
+        }
+
+        .year-row:last-child {
+            border-bottom: none;
+        }
+
+        .year-label {
+            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            font-weight: bold;
+            color: #aaa;
+            letter-spacing: 0.05em;
+            width: 2.8rem;
+            flex-shrink: 0;
+            padding-top: 0.15rem;
+            user-select: none;
+        }
+
+        .year-row.current-year .year-label {
+            color: #1a1a1a;
+        }
+
+        .year-entry {
+            flex: 1;
             position: relative;
         }
 
-        .modal .modal-date {
-            font-size: 0.8rem;
-            color: #999;
-            font-family: Arial, sans-serif;
-            margin-bottom: 0.8rem;
-        }
-
-        .modal input[type="text"] {
+        .year-entry textarea {
             width: 100%;
-            font-size: 1.3rem;
             font-family: Georgia, serif;
-            border: none;
-            border-bottom: 1px solid #ddd;
-            padding: 0.4rem 0;
-            margin-bottom: 1rem;
-            outline: none;
-        }
-
-        .modal input[type="text"]:focus { border-bottom-color: #2c2c2c; }
-
-        .modal textarea {
-            width: 100%;
-            min-height: 260px;
             font-size: 1rem;
-            font-family: Georgia, serif;
-            line-height: 1.8;
+            line-height: 1.55;
             border: none;
             outline: none;
-            resize: vertical;
+            background: transparent;
+            resize: none;
+            color: #1a1a1a;
+            overflow: hidden;
+            /* single line by default, grows with content */
+            height: 1.55em;
+            min-height: 1.55em;
+            display: block;
         }
 
-        .modal .modal-actions {
+        .year-entry textarea::placeholder {
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .year-row:not(.current-year) .year-entry textarea {
+            color: #555;
+        }
+
+        /* saved flash */
+        .save-indicator {
+            position: absolute;
+            right: 0;
+            top: 0;
+            font-family: Arial, sans-serif;
+            font-size: 0.7rem;
+            color: #aaa;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .save-indicator.show { opacity: 1; }
+
+        /* ── Page footer ── */
+        .page-footer {
+            border-top: 1px solid #e0d8cc;
+            padding: 0.8rem 2.5rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: #bbb;
             display: flex;
             justify-content: space-between;
-            margin-top: 1.5rem;
         }
 
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            color: #aaa;
-            cursor: pointer;
-            line-height: 1;
-            padding: 0.2rem 0.4rem;
+        /* ── Responsive ── */
+        @media (max-width: 720px) {
+            .page { margin: 1rem; }
+            .page-header, .year-rows, .page-footer { padding-left: 1.2rem; padding-right: 1.2rem; }
         }
-
-        .modal-close:hover { color: #333; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Journal</h1>
-    <span class="date" id="headerDate"></span>
-</header>
+<nav>
+    <span class="title">Five Year Journal</span>
+    <button class="today-btn" onclick="goToToday()">Today</button>
+</nav>
 
-<div class="container">
-
-    <!-- New Entry Form -->
-    <div class="new-entry">
-        <h2>New Entry</h2>
-        <input type="text" id="newTitle" placeholder="Title (optional)" />
-        <textarea id="newBody" placeholder="What's on your mind?"></textarea>
-        <div class="actions">
-            <button class="btn-ghost" onclick="clearNewEntry()">Clear</button>
-            <button class="btn-primary" onclick="saveNewEntry()">Save Entry</button>
+<div class="page">
+    <div class="page-header">
+        <div>
+            <div class="day-of-year" id="dayOfYear"></div>
+            <div class="month-day" id="monthDay"></div>
+            <div class="weekday" id="weekday"></div>
+        </div>
+        <div class="page-nav">
+            <button onclick="navigate(-1)" title="Previous day">&#8592;</button>
+            <button onclick="navigate(1)" title="Next day">&#8594;</button>
         </div>
     </div>
 
-    <!-- Entries List -->
-    <div class="entries-header">
-        <h2>Past Entries</h2>
-        <input type="text" class="search-input" id="searchInput" placeholder="Search entries..." oninput="renderEntries()" />
-    </div>
+    <div class="year-rows" id="yearRows"></div>
 
-    <div id="entriesList"></div>
-</div>
-
-<!-- Edit Modal -->
-<div class="modal-overlay" id="editModal" onclick="handleOverlayClick(event)">
-    <div class="modal">
-        <button class="modal-close" onclick="closeModal()">&#x2715;</button>
-        <div class="modal-date" id="modalDate"></div>
-        <input type="text" id="modalTitle" placeholder="Title (optional)" />
-        <textarea id="modalBody" placeholder="What's on your mind?"></textarea>
-        <div class="modal-actions">
-            <button class="btn-danger" onclick="deleteFromModal()">Delete</button>
-            <div style="display:flex;gap:0.5rem">
-                <button class="btn-ghost" onclick="closeModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveModal()">Save</button>
-            </div>
-        </div>
+    <div class="page-footer">
+        <span>Entries save automatically</span>
+        <span id="footerFill"></span>
     </div>
 </div>
 
 <script>
-    const STORAGE_KEY = 'journal_entries';
-    let editingId = null;
+    const STORAGE_KEY = 'fiveYearJournal';
+    const YEARS = 5;
 
-    function getEntries() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-        catch { return []; }
+    // currentDate is the M/D being viewed (month 0-indexed, day 1-indexed)
+    // We store just month+day so it's year-agnostic navigation
+    let viewMonth, viewDay;
+
+    function getData() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch { return {}; }
     }
 
-    function saveEntries(entries) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    function setData(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
-    function formatDate(iso) {
-        const d = new Date(iso);
-        return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-             + ' at '
-             + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    function getEntry(year, month, day) {
+        const data = getData();
+        const key = `${month}-${day}`;
+        return (data[key] && data[key][year]) || '';
     }
 
-    function setHeaderDate() {
-        document.getElementById('headerDate').textContent =
-            new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    function setEntry(year, month, day, text) {
+        const data = getData();
+        const key = `${month}-${day}`;
+        if (!data[key]) data[key] = {};
+        data[key][year] = text;
+        setData(data);
     }
 
-    function clearNewEntry() {
-        document.getElementById('newTitle').value = '';
-        document.getElementById('newBody').value = '';
+    function startYear() {
+        // The 5 years ending with the current year
+        return new Date().getFullYear() - YEARS + 1;
     }
 
-    function saveNewEntry() {
-        const title = document.getElementById('newTitle').value.trim();
-        const body = document.getElementById('newBody').value.trim();
-        if (!body && !title) {
-            document.getElementById('newBody').focus();
-            return;
+    function currentYear() {
+        return new Date().getFullYear();
+    }
+
+    function dayOfYear(month, day) {
+        // month is 0-indexed
+        const d = new Date(2024, month, day); // 2024 = leap year, safe for Feb 29
+        const start = new Date(2024, 0, 1);
+        return Math.round((d - start) / 86400000) + 1;
+    }
+
+    function monthName(month) {
+        return new Date(2000, month, 1).toLocaleString('en-US', { month: 'long' });
+    }
+
+    function weekdayForDate(month, day) {
+        // Use current year for weekday (changes each year, just show current)
+        const year = currentYear();
+        return new Date(year, month, day).toLocaleString('en-US', { weekday: 'long' });
+    }
+
+    function autoResize(ta) {
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+    }
+
+    function render() {
+        // Header
+        document.getElementById('dayOfYear').textContent =
+            `Day ${dayOfYear(viewMonth, viewDay)}`;
+        document.getElementById('monthDay').textContent =
+            `${monthName(viewMonth)} ${viewDay}`;
+        document.getElementById('weekday').textContent =
+            weekdayForDate(viewMonth, viewDay);
+
+        // Year rows
+        const container = document.getElementById('yearRows');
+        container.innerHTML = '';
+
+        const base = startYear();
+        const thisYear = currentYear();
+        let filled = 0, total = 0;
+
+        for (let i = 0; i < YEARS; i++) {
+            const year = base + i;
+            const text = getEntry(year, viewMonth, viewDay);
+            if (text.trim()) filled++;
+            total++;
+
+            const isCurrent = year === thisYear;
+
+            const row = document.createElement('div');
+            row.className = 'year-row' + (isCurrent ? ' current-year' : '');
+
+            const label = document.createElement('div');
+            label.className = 'year-label';
+            label.textContent = year;
+
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'year-entry';
+
+            const ta = document.createElement('textarea');
+            ta.rows = 1;
+            ta.value = text;
+            ta.placeholder = isCurrent ? 'Write your line for today…' : '';
+            // Past/future years are editable but dimmed
+            ta.dataset.year = year;
+
+            const indicator = document.createElement('span');
+            indicator.className = 'save-indicator';
+            indicator.textContent = 'saved';
+
+            let saveTimer;
+            ta.addEventListener('input', () => {
+                autoResize(ta);
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(() => {
+                    setEntry(year, viewMonth, viewDay, ta.value);
+                    indicator.classList.add('show');
+                    setTimeout(() => indicator.classList.remove('show'), 1200);
+                    updateFooter();
+                }, 400);
+            });
+
+            // Resize on load
+            setTimeout(() => autoResize(ta), 0);
+
+            entryDiv.appendChild(ta);
+            entryDiv.appendChild(indicator);
+            row.appendChild(label);
+            row.appendChild(entryDiv);
+            container.appendChild(row);
         }
-        const entries = getEntries();
-        entries.unshift({ id: Date.now().toString(), title, body, createdAt: new Date().toISOString() });
-        saveEntries(entries);
-        clearNewEntry();
-        renderEntries();
-    }
 
-    function renderEntries() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        let entries = getEntries();
+        updateFooter();
 
-        if (query) {
-            entries = entries.filter(e =>
-                e.title.toLowerCase().includes(query) || e.body.toLowerCase().includes(query)
-            );
+        // Focus current year's textarea
+        const textareas = container.querySelectorAll('textarea');
+        const currentIdx = currentYear() - base;
+        if (currentIdx >= 0 && currentIdx < textareas.length) {
+            // Only auto-focus if it's today's date
+            const today = new Date();
+            if (viewMonth === today.getMonth() && viewDay === today.getDate()) {
+                textareas[currentIdx].focus();
+                const len = textareas[currentIdx].value.length;
+                textareas[currentIdx].setSelectionRange(len, len);
+            }
         }
+    }
 
-        const list = document.getElementById('entriesList');
-
-        if (entries.length === 0) {
-            list.innerHTML = query
-                ? '<div class="empty">No entries match your search.</div>'
-                : '<div class="empty">No entries yet. Write something above!</div>';
-            return;
+    function updateFooter() {
+        const base = startYear();
+        let filled = 0;
+        for (let i = 0; i < YEARS; i++) {
+            if (getEntry(base + i, viewMonth, viewDay).trim()) filled++;
         }
-
-        list.innerHTML = entries.map(e => `
-            <div class="entry-card">
-                <div class="meta">
-                    <span class="entry-date">${formatDate(e.createdAt)}</span>
-                    <div class="entry-actions">
-                        <button class="btn-ghost" onclick="openEdit('${e.id}')">Edit</button>
-                        <button class="btn-danger" onclick="deleteEntry('${e.id}')">Delete</button>
-                    </div>
-                </div>
-                ${e.title ? `<h3>${escHtml(e.title)}</h3>` : '<h3 class="untitled">Untitled</h3>'}
-                <div class="entry-preview">${escHtml(e.body)}</div>
-            </div>
-        `).join('');
+        document.getElementById('footerFill').textContent =
+            filled === 0 ? '' : `${filled} of ${YEARS} years`;
     }
 
-    function escHtml(str) {
-        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function navigate(delta) {
+        // Move by delta days
+        // Use a non-leap reference year except for Feb 29
+        const d = new Date(2024, viewMonth, viewDay);
+        d.setDate(d.getDate() + delta);
+        viewMonth = d.getMonth();
+        viewDay = d.getDate();
+        render();
+        window.scrollTo(0, 0);
     }
 
-    function deleteEntry(id) {
-        if (!confirm('Delete this entry?')) return;
-        saveEntries(getEntries().filter(e => e.id !== id));
-        renderEntries();
+    function goToToday() {
+        const today = new Date();
+        viewMonth = today.getMonth();
+        viewDay = today.getDate();
+        render();
     }
 
-    function openEdit(id) {
-        const entry = getEntries().find(e => e.id === id);
-        if (!entry) return;
-        editingId = id;
-        document.getElementById('modalDate').textContent = formatDate(entry.createdAt);
-        document.getElementById('modalTitle').value = entry.title;
-        document.getElementById('modalBody').value = entry.body;
-        document.getElementById('editModal').classList.add('open');
-        document.getElementById('modalBody').focus();
-    }
-
-    function closeModal() {
-        document.getElementById('editModal').classList.remove('open');
-        editingId = null;
-    }
-
-    function handleOverlayClick(e) {
-        if (e.target === document.getElementById('editModal')) closeModal();
-    }
-
-    function saveModal() {
-        if (!editingId) return;
-        const entries = getEntries();
-        const idx = entries.findIndex(e => e.id === editingId);
-        if (idx === -1) return;
-        entries[idx].title = document.getElementById('modalTitle').value.trim();
-        entries[idx].body = document.getElementById('modalBody').value.trim();
-        entries[idx].updatedAt = new Date().toISOString();
-        saveEntries(entries);
-        closeModal();
-        renderEntries();
-    }
-
-    function deleteFromModal() {
-        if (!editingId) return;
-        if (!confirm('Delete this entry?')) return;
-        saveEntries(getEntries().filter(e => e.id !== editingId));
-        closeModal();
-        renderEntries();
-    }
-
-    // Keyboard shortcut: Ctrl+Enter to save new entry
-    document.getElementById('newBody').addEventListener('keydown', e => {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveNewEntry();
-    });
-
-    document.getElementById('modalBody').addEventListener('keydown', e => {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveModal();
-    });
-
+    // Keyboard navigation
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeModal();
+        // Only navigate if no textarea is focused
+        if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowLeft') navigate(-1);
+        if (e.key === 'ArrowRight') navigate(1);
     });
 
-    setHeaderDate();
-    renderEntries();
+    // Init
+    const today = new Date();
+    viewMonth = today.getMonth();
+    viewDay = today.getDate();
+    render();
 </script>
 </body>
 </html>
