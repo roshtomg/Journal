@@ -31,8 +31,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.75rem 1.5rem;
             padding-top: calc(0.75rem + env(safe-area-inset-top));
+            padding-bottom: 0.75rem;
+            padding-left: calc(1.5rem + env(safe-area-inset-left));
+            padding-right: calc(1.5rem + env(safe-area-inset-right));
         }
 
         nav .title {
@@ -389,12 +391,20 @@
 
         /* ── Nav user info ── */
         .nav-user {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(245,240,232,0.2);
+            display: none;
+            align-items: center;
+            justify-content: center;
             font-family: Arial, sans-serif;
-            font-size: 0.72rem;
-            color: rgba(245,240,232,0.5);
-            letter-spacing: 0.04em;
-            margin-right: 0.5rem;
+            font-size: 0.65rem;
+            color: #f5f0e8;
+            flex-shrink: 0;
         }
+
+        .nav-user.visible { display: flex; }
     </style>
 </head>
 <body>
@@ -468,7 +478,7 @@
             if (event === 'SIGNED_OUT') {
                 currentUser = null;
                 document.getElementById('authOverlay').classList.add('open');
-                document.getElementById('navUser').textContent = '';
+                document.getElementById('navUser').classList.remove('visible');
                 document.getElementById('signOutBtn').style.display = 'none';
             }
         });
@@ -477,7 +487,9 @@
     async function onLogin(user) {
         currentUser = user;
         document.getElementById('authOverlay').classList.remove('open');
-        document.getElementById('navUser').textContent = user.email;
+        const navUser = document.getElementById('navUser');
+        navUser.textContent = user.email[0].toUpperCase();
+        navUser.classList.add('visible');
         document.getElementById('signOutBtn').style.display = '';
         await syncFromSupabase();
         render();
