@@ -219,8 +219,16 @@
 
         /* ── Responsive ── */
         @media (max-width: 720px) {
-            .page { margin: 1rem; }
-            .page-header, .year-rows, .page-footer { padding-left: 1.2rem; padding-right: 1.2rem; }
+            .page {
+                margin: 0;
+                border-left: none;
+                border-right: none;
+                box-shadow: none;
+            }
+            .page-header, .year-rows, .page-footer {
+                padding-left: max(1.2rem, env(safe-area-inset-left));
+                padding-right: max(1.2rem, env(safe-area-inset-right));
+            }
         }
 
         /* ── Search overlay ── */
