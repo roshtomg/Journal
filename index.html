@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Journal">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -314,17 +315,105 @@
             text-align: center;
             margin-top: 2rem;
         }
+
+        /* ── Auth overlay ── */
+        .auth-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #f5f0e8;
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-overlay.open { display: flex; }
+
+        .auth-box {
+            max-width: 360px;
+            width: 100%;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .auth-title {
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            margin-bottom: 2rem;
+        }
+
+        .auth-input {
+            width: 100%;
+            font-family: Georgia, serif;
+            font-size: 1rem;
+            padding: 0.65rem 1rem;
+            border: 1px solid #d8d0c0;
+            border-radius: 2px;
+            background: #fffdf8;
+            color: #1a1a1a;
+            outline: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .auth-input:focus { border-color: #1a1a1a; }
+
+        .auth-btn {
+            width: 100%;
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.65rem 1rem;
+            background: #1a1a1a;
+            color: #f5f0e8;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .auth-btn:hover { background: #333; }
+
+        .auth-msg {
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 1rem;
+            min-height: 1.2em;
+        }
+
+        /* ── Nav user info ── */
+        .nav-user {
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: rgba(245,240,232,0.5);
+            letter-spacing: 0.04em;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
 <body>
 
 <nav>
     <span class="title">Ten Year Journal</span>
-    <div style="display:flex;gap:0.5rem">
+    <div style="display:flex;align-items:center;gap:0.5rem">
+        <span class="nav-user" id="navUser"></span>
         <button class="today-btn" onclick="openSearch()">Search</button>
         <button class="today-btn" onclick="goToToday()">Today</button>
+        <button class="today-btn" id="signOutBtn" onclick="signOut()" style="display:none">Sign Out</button>
     </div>
 </nav>
+
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-box">
+        <div class="auth-title">Ten Year Journal</div>
+        <input class="auth-input" id="authEmail" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
+        <button class="auth-btn" onclick="sendMagicLink()">Send Magic Link</button>
+        <div class="auth-msg" id="authMsg"></div>
+    </div>
+</div>
 
 <div class="search-overlay" id="searchOverlay">
     <div class="search-box">
@@ -358,6 +447,76 @@
 </div>
 
 <script>
+    // ── Supabase ──
+    const SUPABASE_URL = 'https://iuzsisanrlfbutdtwlqh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_bLLqxn3HvgKym0azcX4fVw_9U_l7pNQ';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentUser = null;
+
+    async function initAuth() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            await onLogin(session.user);
+        } else {
+            document.getElementById('authOverlay').classList.add('open');
+        }
+        sb.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session) await onLogin(session.user);
+            if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                document.getElementById('authOverlay').classList.add('open');
+                document.getElementById('navUser').textContent = '';
+                document.getElementById('signOutBtn').style.display = 'none';
+            }
+        });
+    }
+
+    async function onLogin(user) {
+        currentUser = user;
+        document.getElementById('authOverlay').classList.remove('open');
+        document.getElementById('navUser').textContent = user.email;
+        document.getElementById('signOutBtn').style.display = '';
+        await syncFromSupabase();
+        render();
+    }
+
+    async function sendMagicLink() {
+        const email = document.getElementById('authEmail').value.trim();
+        const msg = document.getElementById('authMsg');
+        if (!email) { msg.textContent = 'Please enter your email.'; return; }
+        msg.textContent = 'Sending…';
+        const { error } = await sb.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: window.location.href }
+        });
+        msg.textContent = error ? error.message : 'Check your email for a magic link!';
+    }
+
+    async function signOut() {
+        await sb.auth.signOut();
+    }
+
+    async function syncFromSupabase() {
+        if (!currentUser) return;
+        const { data, error } = await sb.from('entries').select('*');
+        if (error || !data) return;
+        const local = getData();
+        for (const row of data) {
+            const key = `${row.month}-${row.day}`;
+            if (!local[key]) local[key] = {};
+            local[key][row.year] = row.text;
+        }
+        setData(local);
+    }
+
+    async function syncEntryToSupabase(year, month, day, text) {
+        if (!currentUser) return;
+        await sb.from('entries').upsert(
+            { user_id: currentUser.id, year, month, day, text, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id,month,day,year' }
+        );
+    }
+
     const STORAGE_KEY = 'fiveYearJournal';
     const YEARS = 10;
 
@@ -386,6 +545,7 @@
         if (!data[key]) data[key] = {};
         data[key][year] = text;
         setData(data);
+        syncEntryToSupabase(year, month, day, text);
     }
 
     function startYear() {
@@ -608,7 +768,7 @@
     const today = new Date();
     viewMonth = today.getMonth();
     viewDay = today.getDate();
-    render();
+    initAuth();
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js');
