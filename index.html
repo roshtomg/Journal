@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Five Year Journal</title>
+    <title>Ten Year Journal</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -216,14 +216,125 @@
             .page { margin: 1rem; }
             .page-header, .year-rows, .page-footer { padding-left: 1.2rem; padding-right: 1.2rem; }
         }
+
+        /* ── Search overlay ── */
+        .search-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(26,26,26,0.92);
+            z-index: 100;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .search-overlay.open { display: block; }
+
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-input-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            font-family: Georgia, serif;
+            font-size: 1rem;
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 2px;
+            background: #fffdf8;
+            color: #1a1a1a;
+            outline: none;
+        }
+
+        .search-close {
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            padding: 0.3rem 0.8rem;
+            background: transparent;
+            color: #f5f0e8;
+            border: 1px solid rgba(245,240,232,0.4);
+            border-radius: 2px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .search-close:hover { background: rgba(245,240,232,0.1); }
+
+        .search-results {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .search-result {
+            background: #fffdf8;
+            border-radius: 2px;
+            padding: 0.9rem 1.1rem;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .search-result:hover { border-left-color: #1a1a1a; }
+
+        .search-result-date {
+            font-family: Arial, sans-serif;
+            font-size: 0.75rem;
+            color: #888;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .search-result-text {
+            font-family: Georgia, serif;
+            font-size: 0.95rem;
+            color: #1a1a1a;
+            line-height: 1.5;
+        }
+
+        .search-result-text mark {
+            background: #f5e68a;
+            color: #1a1a1a;
+            border-radius: 1px;
+            padding: 0 1px;
+        }
+
+        .search-empty {
+            color: #aaa;
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
     </style>
 </head>
 <body>
 
 <nav>
-    <span class="title">Five Year Journal</span>
-    <button class="today-btn" onclick="goToToday()">Today</button>
+    <span class="title">Ten Year Journal</span>
+    <div style="display:flex;gap:0.5rem">
+        <button class="today-btn" onclick="openSearch()">Search</button>
+        <button class="today-btn" onclick="goToToday()">Today</button>
+    </div>
 </nav>
+
+<div class="search-overlay" id="searchOverlay">
+    <div class="search-box">
+        <div class="search-input-row">
+            <input class="search-input" id="searchInput" type="search" placeholder="Search your entries…" oninput="doSearch()">
+            <button class="search-close" onclick="closeSearch()">Close</button>
+        </div>
+        <div class="search-results" id="searchResults"></div>
+    </div>
+</div>
 
 <div class="page">
     <div class="page-header">
@@ -248,7 +359,7 @@
 
 <script>
     const STORAGE_KEY = 'fiveYearJournal';
-    const YEARS = 5;
+    const YEARS = 10;
 
     // currentDate is the M/D being viewed (month 0-indexed, day 1-indexed)
     // We store just month+day so it's year-agnostic navigation
@@ -278,8 +389,8 @@
     }
 
     function startYear() {
-        // The 5 years ending with the current year
-        return new Date().getFullYear() - YEARS + 1;
+        // 10 years starting from the current year
+        return new Date().getFullYear();
     }
 
     function currentYear() {
@@ -399,7 +510,7 @@
             if (getEntry(base + i, viewMonth, viewDay).trim()) filled++;
         }
         document.getElementById('footerFill').textContent =
-            filled === 0 ? '' : `${filled} of ${YEARS} years`;
+            filled === 0 ? '' : `${filled} of ${YEARS} years filled`;
     }
 
     function navigate(delta) {
@@ -420,9 +531,74 @@
         render();
     }
 
+    // ── Search ──
+    function openSearch() {
+        document.getElementById('searchOverlay').classList.add('open');
+        document.getElementById('searchInput').focus();
+    }
+
+    function closeSearch() {
+        document.getElementById('searchOverlay').classList.remove('open');
+    }
+
+    function doSearch() {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        const resultsEl = document.getElementById('searchResults');
+        resultsEl.innerHTML = '';
+        if (!query) return;
+
+        const data = getData();
+        const matches = [];
+
+        for (const key in data) {
+            const parts = key.split('-');
+            const month = parseInt(parts[0]);
+            const day = parseInt(parts[1]);
+            const yearEntries = data[key];
+            for (const yr in yearEntries) {
+                const text = yearEntries[yr];
+                if (text && text.toLowerCase().includes(query)) {
+                    matches.push({ month, day, year: parseInt(yr), text });
+                }
+            }
+        }
+
+        matches.sort((a, b) => b.year - a.year || a.month - b.month || a.day - b.day);
+
+        if (matches.length === 0) {
+            resultsEl.innerHTML = '<div class="search-empty">No entries found.</div>';
+            return;
+        }
+
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        matches.forEach(({ month, day, year, text }) => {
+            const div = document.createElement('div');
+            div.className = 'search-result';
+
+            const dateEl = document.createElement('div');
+            dateEl.className = 'search-result-date';
+            dateEl.textContent = `${monthName(month)} ${day}, ${year}`;
+
+            const textEl = document.createElement('div');
+            textEl.className = 'search-result-text';
+            textEl.innerHTML = text.replace(new RegExp(escaped, 'gi'), m => `<mark>${m}</mark>`);
+
+            div.appendChild(dateEl);
+            div.appendChild(textEl);
+            div.addEventListener('click', () => {
+                viewMonth = month;
+                viewDay = day;
+                render();
+                closeSearch();
+            });
+            resultsEl.appendChild(div);
+        });
+    }
+
     // Keyboard navigation
     document.addEventListener('keydown', e => {
-        // Only navigate if no textarea is focused
+        if (e.key === 'Escape') { closeSearch(); return; }
+        if (document.getElementById('searchOverlay').classList.contains('open')) return;
         if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
         if (e.key === 'ArrowLeft') navigate(-1);
         if (e.key === 'ArrowRight') navigate(1);
