@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cooking Club Potluck</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #faf7f2;
+            color: #2c2c2c;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: #2c2c2c;
+            color: #faf7f2;
+            padding: 1.1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .site-header-title {
+            font-family: Georgia, serif;
+            font-size: 1.05rem;
+            letter-spacing: 0.06em;
+            font-weight: normal;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .btn-primary { background: #c45c2e; color: white; }
+        .btn-primary:not(:disabled):hover { background: #a84e26; }
+
+        .btn-secondary { background: white; color: #2c2c2c; border: 1px solid #d8d0c8; }
+        .btn-secondary:not(:disabled):hover { background: #f5f0e8; }
+
+        .btn-ghost { background: transparent; color: #faf7f2; border: 1px solid rgba(250,247,242,0.35); }
+        .btn-ghost:not(:disabled):hover { background: rgba(250,247,242,0.1); }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+
+        .btn-icon-edit { color: #666; }
+        .btn-icon-edit:hover { background: #f0ece4; }
+
+        .btn-icon-delete { color: #c45c2e; }
+        .btn-icon-delete:hover { background: #fff0ec; }
+
+        /* ── Layout ── */
+        .container { max-width: 660px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        /* ── Home page ── */
+        .page-heading {
+            font-family: Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: normal;
+            margin-bottom: 0.3rem;
+        }
+
+        .page-subheading { color: #888; font-size: 0.875rem; margin-bottom: 1.75rem; }
+
+        .events-list { display: flex; flex-direction: column; gap: 0.65rem; }
+
+        .event-card {
+            background: white;
+            border: 1px solid #e8e0d4;
+            border-radius: 8px;
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .event-card:hover {
+            border-color: #c45c2e;
+            box-shadow: 0 2px 10px rgba(196,92,46,0.1);
+        }
+
+        .event-card-info { flex: 1; min-width: 0; }
+
+        .event-card-title {
+            font-family: Georgia, serif;
+            font-size: 1.05rem;
+            margin-bottom: 0.2rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-card-meta { font-size: 0.78rem; color: #999; }
+
+        .event-card-arrow { color: #c45c2e; font-size: 1.1rem; flex-shrink: 0; }
+
+        .events-section-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #bbb;
+            font-weight: 600;
+            margin: 1.5rem 0 0.6rem;
+        }
+
+        /* ── Event page ── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font-family: inherit;
+            transition: color 0.15s;
+        }
+
+        .back-link:hover { color: #2c2c2c; }
+
+        .event-page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e8e0d4;
+        }
+
+        .event-page-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .event-page-title {
+            font-family: Georgia, serif;
+            font-size: 1.75rem;
+            font-weight: normal;
+            line-height: 1.2;
+        }
+
+        .event-page-date { color: #888; font-size: 0.875rem; margin-bottom: 0.4rem; }
+
+        .event-page-desc { color: #555; font-size: 0.9rem; line-height: 1.55; margin-top: 0.5rem; }
+
+        /* ── Category sections ── */
+        .category-section { margin-bottom: 1.75rem; }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 2px solid #2c2c2c;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-icon { font-size: 1.1rem; line-height: 1; }
+
+        .category-name {
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 600;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .category-count {
+            margin-left: auto;
+            font-size: 0.72rem;
+            color: #aaa;
+        }
+
+        .signup-item {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #f0ece4;
+            gap: 0.5rem;
+        }
+
+        .signup-item:last-child { border-bottom: none; }
+
+        .signup-info { flex: 1; min-width: 0; }
+        .signup-dish { font-size: 0.95rem; }
+        .signup-name { font-size: 0.78rem; color: #999; margin-top: 0.1rem; }
+
+        .signup-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
+
+        .category-empty {
+            color: #ccc;
+            font-size: 0.875rem;
+            font-style: italic;
+            padding: 0.5rem 0;
+        }
+
+        /* ── Floating sign up button ── */
+        .signup-fab {
+            position: fixed;
+            bottom: 1.75rem;
+            right: 1.75rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 18px rgba(196,92,46,0.35);
+            z-index: 5;
+        }
+
+        /* ── Modals ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 1.75rem;
+            width: 100%;
+            max-width: 420px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            font-family: Georgia, serif;
+            font-size: 1.25rem;
+            font-weight: normal;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid #d8d0c8;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: white;
+            color: #2c2c2c;
+            outline: none;
+            transition: border-color 0.15s;
+            appearance: none;
+        }
+
+        .form-control:focus { border-color: #c45c2e; }
+
+        textarea.form-control { resize: vertical; min-height: 80px; }
+
+        .form-actions {
+            display: flex;
+            gap: 0.65rem;
+            margin-top: 1.5rem;
+        }
+
+        .form-actions .btn { flex: 1; padding: 0.65rem; }
+
+        /* ── Empty / Loading ── */
+        .empty-state {
+            text-align: center;
+            padding: 3.5rem 1rem;
+            color: #bbb;
+        }
+
+        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .empty-state-text { font-size: 0.925rem; line-height: 1.6; }
+
+        .loading { text-align: center; padding: 3rem; color: #bbb; font-size: 0.875rem; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            background: #2c2c2c;
+            color: white;
+            padding: 0.6rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            transition: transform 0.25s ease;
+            z-index: 999;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            .container { padding: 1.25rem 1rem; }
+            .event-page-title { font-size: 1.4rem; }
+            .event-page-title-row { flex-direction: column; gap: 0.75rem; }
+            .signup-fab { bottom: 1.25rem; right: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <span class="site-header-title">Cooking Club</span>
+    <div id="headerActions"></div>
+</header>
+
+<div class="container" id="mainContent">
+    <div class="loading">Loading…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── Create Event Modal ── -->
+<div class="modal-backdrop" id="createEventModal">
+    <div class="modal">
+        <h2>New Event</h2>
+        <div class="form-group">
+            <label>Event Name</label>
+            <input class="form-control" id="newEventTitle" type="text" placeholder="e.g. April Potluck">
+        </div>
+        <div class="form-group">
+            <label>Date</label>
+            <input class="form-control" id="newEventDate" type="date">
+        </div>
+        <div class="form-group">
+            <label>Details <span style="color:#bbb;font-weight:normal;text-transform:none">(optional)</span></label>
+            <textarea class="form-control" id="newEventDesc" placeholder="Location, time, theme…"></textarea>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" onclick="closeModal('createEventModal')">Cancel</button>
+            <button class="btn btn-primary" id="createEventBtn" onclick="createEvent()">Create Event</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Sign Up Modal ── -->
+<div class="modal-backdrop" id="signupModal">
+    <div class="modal">
+        <h2>Sign Up</h2>
+        <div class="form-group">
+            <label>Your Name</label>
+            <input class="form-control" id="signupName" type="text" placeholder="First name is fine">
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select class="form-control" id="signupCategory">
+                <option value="">Choose a category…</option>
+                <option value="appetizer">🥗 Appetizer</option>
+                <option value="entree">🍲 Entree</option>
+                <option value="side">🥘 Side</option>
+                <option value="dessert">🍰 Dessert</option>
+                <option value="drink">🍷 Drink</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>What are you bringing?</label>
+            <input class="form-control" id="signupDish" type="text" placeholder="e.g. Caprese salad">
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" onclick="closeModal('signupModal')">Cancel</button>
+            <button class="btn btn-primary" id="signupSubmitBtn" onclick="submitSignup()">Sign Up</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Edit Modal ── -->
+<div class="modal-backdrop" id="editModal">
+    <div class="modal">
+        <h2>Edit Your Entry</h2>
+        <input type="hidden" id="editSignupId">
+        <div class="form-group">
+            <label>Your Name</label>
+            <input class="form-control" id="editName" type="text">
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select class="form-control" id="editCategory">
+                <option value="appetizer">🥗 Appetizer</option>
+                <option value="entree">🍲 Entree</option>
+                <option value="side">🥘 Side</option>
+                <option value="dessert">🍰 Dessert</option>
+                <option value="drink">🍷 Drink</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>What are you bringing?</label>
+            <input class="form-control" id="editDish" type="text">
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+            <button class="btn btn-primary" id="saveEditBtn" onclick="saveEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/*
+ ╔═══════════════════════════════════════════════════════════════╗
+ ║  SUPABASE SETUP                                               ║
+ ║  1. Create a new project at supabase.com                      ║
+ ║  2. In the SQL Editor, run the following:                     ║
+ ║                                                               ║
+ ║  create table events (                                        ║
+ ║    id uuid default gen_random_uuid() primary key,             ║
+ ║    title text not null,                                       ║
+ ║    event_date date,                                           ║
+ ║    description text,                                          ║
+ ║    created_at timestamptz default now()                       ║
+ ║  );                                                           ║
+ ║                                                               ║
+ ║  create table signups (                                       ║
+ ║    id uuid default gen_random_uuid() primary key,             ║
+ ║    event_id uuid references events(id) on delete cascade,     ║
+ ║    name text not null,                                        ║
+ ║    category text not null,                                    ║
+ ║    dish text not null,                                        ║
+ ║    owner_token text not null,                                 ║
+ ║    created_at timestamptz default now()                       ║
+ ║  );                                                           ║
+ ║                                                               ║
+ ║  alter table events enable row level security;                ║
+ ║  alter table signups enable row level security;               ║
+ ║                                                               ║
+ ║  create policy "public" on events for all                     ║
+ ║    using (true) with check (true);                            ║
+ ║                                                               ║
+ ║  create policy "public" on signups for all                    ║
+ ║    using (true) with check (true);                            ║
+ ║                                                               ║
+ ║  alter publication supabase_realtime add table signups;       ║
+ ║                                                               ║
+ ║  3. Replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY      ║
+ ║     below with your project's URL and anon/public key.        ║
+ ╚═══════════════════════════════════════════════════════════════╝
+*/
+
+    // ── Config ──────────────────────────────────────────────────────
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ── Categories ──────────────────────────────────────────────────
+    const CATEGORIES = [
+        { id: 'appetizer', label: 'Appetizers', icon: '🥗' },
+        { id: 'entree',    label: 'Entrees',    icon: '🍲' },
+        { id: 'side',      label: 'Sides',      icon: '🥘' },
+        { id: 'dessert',   label: 'Desserts',   icon: '🍰' },
+        { id: 'drink',     label: 'Drinks',     icon: '🍷' },
+    ];
+
+    // ── Owner token ─────────────────────────────────────────────────
+    // A UUID stored in this browser. Anyone signing up from the same
+    // browser can edit or remove their own entries.
+    function getOwnerToken() {
+        let t = localStorage.getItem('potluck_owner_token');
+        if (!t) { t = crypto.randomUUID(); localStorage.setItem('potluck_owner_token', t); }
+        return t;
+    }
+
+    // ── Router ──────────────────────────────────────────────────────
+    let currentEventId = null;
+    let realtimeChannel = null;
+
+    function getRouteEventId() {
+        return new URLSearchParams(window.location.search).get('event');
+    }
+
+    function navigateTo(eventId) {
+        const url = eventId
+            ? `${window.location.pathname}?event=${eventId}`
+            : window.location.pathname;
+        history.pushState({}, '', url);
+        route();
+    }
+
+    function route() {
+        if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+        const eventId = getRouteEventId();
+        currentEventId = eventId;
+        eventId ? showEventPage(eventId) : showHomePage();
+    }
+
+    window.addEventListener('popstate', route);
+
+    // ── Toast ────────────────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+    }
+
+    // ── Modals ───────────────────────────────────────────────────────
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    document.querySelectorAll('.modal-backdrop').forEach(el => {
+        el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-backdrop.open').forEach(el => el.classList.remove('open'));
+        }
+    });
+
+    // ── Home page ────────────────────────────────────────────────────
+    async function showHomePage() {
+        document.getElementById('headerActions').innerHTML =
+            `<button class="btn btn-ghost" onclick="openCreateEventModal()">+ New Event</button>`;
+
+        const content = document.getElementById('mainContent');
+        content.innerHTML = '<div class="loading">Loading…</div>';
+
+        const { data: events, error } = await sb
+            .from('events')
+            .select('id, title, event_date, created_at')
+            .order('event_date', { ascending: true, nullsFirst: false });
+
+        if (error) {
+            content.innerHTML = '<div class="loading">Could not load events. Check your Supabase config.</div>';
+            return;
+        }
+
+        if (!events || events.length === 0) {
+            content.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🍽️</div>
+                    <div class="empty-state-text">No events yet.<br>Create one and share the link with your club!</div>
+                </div>
+            `;
+            return;
+        }
+
+        // Load signup counts
+        const ids = events.map(e => e.id);
+        const { data: counts } = await sb
+            .from('signups')
+            .select('event_id')
+            .in('event_id', ids);
+
+        const countMap = {};
+        (counts || []).forEach(r => { countMap[r.event_id] = (countMap[r.event_id] || 0) + 1; });
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const upcoming = events.filter(e => !e.event_date || new Date(e.event_date + 'T00:00:00') >= today);
+        const past     = events.filter(e =>  e.event_date && new Date(e.event_date + 'T00:00:00') <  today);
+
+        let html = '';
+
+        if (upcoming.length > 0) {
+            html += `<div class="page-heading">Upcoming Events</div>
+                     <div class="page-subheading">${upcoming.length} event${upcoming.length !== 1 ? 's' : ''}</div>
+                     <div class="events-list">`;
+            upcoming.forEach(ev => { html += renderEventCard(ev, countMap[ev.id] || 0); });
+            html += '</div>';
+        }
+
+        if (past.length > 0) {
+            html += `<div class="events-section-label" style="margin-top:${upcoming.length ? '2rem' : '0'}">Past Events</div>
+                     <div class="events-list" style="opacity:0.55">`;
+            past.forEach(ev => { html += renderEventCard(ev, countMap[ev.id] || 0); });
+            html += '</div>';
+        }
+
+        content.innerHTML = html;
+        attachEventCardListeners();
+    }
+
+    function renderEventCard(ev, count) {
+        const dateStr = ev.event_date
+            ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' })
+            : 'Date TBD';
+        return `
+            <div class="event-card" data-event-id="${ev.id}">
+                <div class="event-card-info">
+                    <div class="event-card-title">${escHtml(ev.title)}</div>
+                    <div class="event-card-meta">${dateStr} &middot; ${count} signed up</div>
+                </div>
+                <span class="event-card-arrow">→</span>
+            </div>
+        `;
+    }
+
+    function attachEventCardListeners() {
+        document.querySelectorAll('.event-card[data-event-id]').forEach(card => {
+            card.addEventListener('click', () => navigateTo(card.dataset.eventId));
+        });
+    }
+
+    // ── Create Event ─────────────────────────────────────────────────
+    function openCreateEventModal() {
+        document.getElementById('newEventTitle').value = '';
+        document.getElementById('newEventDate').value = '';
+        document.getElementById('newEventDesc').value = '';
+        openModal('createEventModal');
+        setTimeout(() => document.getElementById('newEventTitle').focus(), 80);
+    }
+
+    async function createEvent() {
+        const title = document.getElementById('newEventTitle').value.trim();
+        const date  = document.getElementById('newEventDate').value;
+        const desc  = document.getElementById('newEventDesc').value.trim();
+
+        if (!title) { document.getElementById('newEventTitle').focus(); return; }
+
+        const btn = document.getElementById('createEventBtn');
+        btn.disabled = true; btn.textContent = 'Creating…';
+
+        const { data, error } = await sb
+            .from('events')
+            .insert({ title, event_date: date || null, description: desc || null })
+            .select('id')
+            .single();
+
+        btn.disabled = false; btn.textContent = 'Create Event';
+
+        if (error) { showToast('Error creating event'); return; }
+
+        closeModal('createEventModal');
+        navigateTo(data.id);
+    }
+
+    document.getElementById('newEventTitle').addEventListener('keydown', e => {
+        if (e.key === 'Enter') createEvent();
+    });
+
+    // ── Event page ───────────────────────────────────────────────────
+    async function showEventPage(eventId) {
+        document.getElementById('headerActions').innerHTML = '';
+        const content = document.getElementById('mainContent');
+        content.innerHTML = '<div class="loading">Loading…</div>';
+
+        const [{ data: ev, error: evErr }, { data: signups }] = await Promise.all([
+            sb.from('events').select('*').eq('id', eventId).single(),
+            sb.from('signups').select('*').eq('event_id', eventId).order('created_at'),
+        ]);
+
+        if (evErr || !ev) {
+            content.innerHTML = '<div class="loading">Event not found.</div>';
+            return;
+        }
+
+        renderEventPageShell(ev);
+        renderSignups(signups || []);
+
+        // Real-time: refresh signups on any change
+        realtimeChannel = sb.channel(`event-${eventId}`)
+            .on('postgres_changes', {
+                event: '*', schema: 'public', table: 'signups',
+                filter: `event_id=eq.${eventId}`,
+            }, async () => {
+                const { data: updated } = await sb
+                    .from('signups').select('*').eq('event_id', eventId).order('created_at');
+                renderSignups(updated || []);
+            })
+            .subscribe();
+    }
+
+    function renderEventPageShell(ev) {
+        const dateStr = ev.event_date
+            ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-US', {
+                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+              })
+            : 'Date TBD';
+
+        document.getElementById('mainContent').innerHTML = `
+            <button class="back-link" onclick="navigateTo(null)">← All Events</button>
+            <div class="event-page-header">
+                <div class="event-page-title-row">
+                    <h1 class="event-page-title">${escHtml(ev.title)}</h1>
+                    <button class="btn btn-secondary" onclick="copyLink()">Share</button>
+                </div>
+                <div class="event-page-date">📅 ${dateStr}</div>
+                ${ev.description ? `<div class="event-page-desc">${escHtml(ev.description)}</div>` : ''}
+            </div>
+            <div id="signupsContainer"></div>
+            <div style="height: 5rem"></div>
+        `;
+
+        // Remove any existing FAB
+        document.querySelectorAll('.signup-fab').forEach(el => el.remove());
+        const fab = document.createElement('button');
+        fab.className = 'btn btn-primary signup-fab';
+        fab.textContent = '+ Sign Up';
+        fab.onclick = openSignupModal;
+        document.body.appendChild(fab);
+    }
+
+    function renderSignups(signups) {
+        const container = document.getElementById('signupsContainer');
+        if (!container) return;
+
+        const ownerToken = getOwnerToken();
+        let html = '';
+
+        CATEGORIES.forEach(cat => {
+            const items = signups.filter(s => s.category === cat.id);
+            html += `
+                <div class="category-section">
+                    <div class="category-header">
+                        <span class="category-icon">${cat.icon}</span>
+                        <span class="category-name">${cat.label}</span>
+                        ${items.length > 0 ? `<span class="category-count">${items.length}</span>` : ''}
+                    </div>
+                    <div>
+                        ${items.length === 0
+                            ? `<div class="category-empty">Nothing yet — be the first!</div>`
+                            : items.map(s => renderSignupItem(s, ownerToken)).join('')
+                        }
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        attachSignupListeners();
+    }
+
+    function renderSignupItem(s, ownerToken) {
+        const isOwn = s.owner_token === ownerToken;
+        return `
+            <div class="signup-item" data-id="${s.id}">
+                <div class="signup-info">
+                    <div class="signup-dish">${escHtml(s.dish)}</div>
+                    <div class="signup-name">${escHtml(s.name)}</div>
+                </div>
+                ${isOwn ? `
+                    <div class="signup-actions">
+                        <button class="btn-icon btn-icon-edit"
+                            data-action="edit"
+                            data-name="${escAttr(s.name)}"
+                            data-category="${s.category}"
+                            data-dish="${escAttr(s.dish)}">Edit</button>
+                        <button class="btn-icon btn-icon-delete" data-action="delete">Remove</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    function attachSignupListeners() {
+        document.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.closest('[data-id]');
+                const id = item.dataset.id;
+                if (btn.dataset.action === 'edit') {
+                    openEditModal(id, btn.dataset.name, btn.dataset.category, btn.dataset.dish);
+                } else if (btn.dataset.action === 'delete') {
+                    deleteSignup(id);
+                }
+            });
+        });
+    }
+
+    // ── Sign Up ──────────────────────────────────────────────────────
+    function openSignupModal() {
+        const savedName = localStorage.getItem('potluck_name') || '';
+        document.getElementById('signupName').value = savedName;
+        document.getElementById('signupCategory').value = '';
+        document.getElementById('signupDish').value = '';
+        openModal('signupModal');
+        const focus = savedName ? 'signupCategory' : 'signupName';
+        setTimeout(() => document.getElementById(focus).focus(), 80);
+    }
+
+    async function submitSignup() {
+        const name     = document.getElementById('signupName').value.trim();
+        const category = document.getElementById('signupCategory').value;
+        const dish     = document.getElementById('signupDish').value.trim();
+
+        if (!name)     { document.getElementById('signupName').focus(); return; }
+        if (!category) { document.getElementById('signupCategory').focus(); return; }
+        if (!dish)     { document.getElementById('signupDish').focus(); return; }
+
+        const btn = document.getElementById('signupSubmitBtn');
+        btn.disabled = true; btn.textContent = 'Signing up…';
+
+        const { error } = await sb.from('signups').insert({
+            event_id:    currentEventId,
+            name, category, dish,
+            owner_token: getOwnerToken(),
+        });
+
+        btn.disabled = false; btn.textContent = 'Sign Up';
+
+        if (error) { showToast('Error signing up — please try again'); return; }
+
+        localStorage.setItem('potluck_name', name);
+        closeModal('signupModal');
+        showToast('You\'re signed up! 🎉');
+    }
+
+    document.getElementById('signupDish').addEventListener('keydown', e => {
+        if (e.key === 'Enter') submitSignup();
+    });
+
+    // ── Edit ─────────────────────────────────────────────────────────
+    function openEditModal(id, name, category, dish) {
+        document.getElementById('editSignupId').value = id;
+        document.getElementById('editName').value = name;
+        document.getElementById('editCategory').value = category;
+        document.getElementById('editDish').value = dish;
+        openModal('editModal');
+    }
+
+    async function saveEdit() {
+        const id       = document.getElementById('editSignupId').value;
+        const name     = document.getElementById('editName').value.trim();
+        const category = document.getElementById('editCategory').value;
+        const dish     = document.getElementById('editDish').value.trim();
+
+        if (!name || !category || !dish) return;
+
+        const btn = document.getElementById('saveEditBtn');
+        btn.disabled = true; btn.textContent = 'Saving…';
+
+        const { error } = await sb
+            .from('signups')
+            .update({ name, category, dish })
+            .eq('id', id)
+            .eq('owner_token', getOwnerToken());
+
+        btn.disabled = false; btn.textContent = 'Save Changes';
+
+        if (error) { showToast('Error saving changes'); return; }
+        closeModal('editModal');
+        showToast('Updated!');
+    }
+
+    // ── Delete ───────────────────────────────────────────────────────
+    async function deleteSignup(id) {
+        if (!confirm('Remove your entry?')) return;
+
+        const { error } = await sb
+            .from('signups')
+            .delete()
+            .eq('id', id)
+            .eq('owner_token', getOwnerToken());
+
+        if (error) { showToast('Error removing entry'); return; }
+        showToast('Entry removed');
+    }
+
+    // ── Share ────────────────────────────────────────────────────────
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => showToast('Link copied!'))
+            .catch(() => showToast('Copy failed — copy the URL from your browser'));
+    }
+
+    // ── Utils ────────────────────────────────────────────────────────
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Safe for use inside double-quoted HTML attributes
+    function escAttr(str) {
+        return escHtml(String(str));
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────
+    route();
+</script>
+</body>
+</html>
