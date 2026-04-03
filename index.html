@@ -497,7 +497,9 @@
     // ── Supabase ──
     const SUPABASE_URL = 'https://iuzsisanrlfbutdtwlqh.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_bLLqxn3HvgKym0azcX4fVw_9U_l7pNQ';
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { flowType: 'implicit' }
+    });
     let currentUser = null;
 
     async function initAuth() {
