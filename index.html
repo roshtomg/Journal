@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Journal">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" href="letter-j-icon-png-21770.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -432,6 +433,29 @@
         }
 
         .nav-user.visible { display: flex; }
+
+        /* ── Calendar picker ── */
+        .cal-btn {
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            padding: 0.3rem 0.8rem;
+            background: transparent;
+            color: #f5f0e8;
+            border: 1px solid rgba(245,240,232,0.4);
+            border-radius: 2px;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .cal-btn:hover { background: rgba(245,240,232,0.1); }
+
+        #datePickerInput {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            height: 0;
+        }
     </style>
 </head>
 <body>
@@ -440,6 +464,8 @@
     <span class="title">Ten Year Journal</span>
     <div style="display:flex;align-items:center;gap:0.5rem">
         <span class="nav-user" id="navUser"></span>
+        <button class="cal-btn" onclick="openDatePicker()">&#128197;</button>
+        <input type="date" id="datePickerInput" onchange="goToPickedDate(this.value)">
         <button class="today-btn" onclick="openSearch()">Search</button>
         <button class="today-btn" onclick="goToToday()">Today</button>
         <button class="today-btn" id="signOutBtn" onclick="signOut()" style="display:none">Sign Out</button>
@@ -738,6 +764,28 @@
         viewMonth = today.getMonth();
         viewDay = today.getDate();
         render();
+    }
+
+    // ── Date picker ──
+    function openDatePicker() {
+        const input = document.getElementById('datePickerInput');
+        // Set value to currently viewed date so picker opens there
+        const year = currentYear();
+        const mm = String(viewMonth + 1).padStart(2, '0');
+        const dd = String(viewDay).padStart(2, '0');
+        input.value = `${year}-${mm}-${dd}`;
+        input.style.pointerEvents = 'auto';
+        input.showPicker ? input.showPicker() : input.click();
+    }
+
+    function goToPickedDate(value) {
+        if (!value) return;
+        const [, month, day] = value.split('-').map(Number);
+        viewMonth = month - 1;
+        viewDay = day;
+        render();
+        window.scrollTo(0, 0);
+        document.getElementById('datePickerInput').style.pointerEvents = 'none';
     }
 
     // ── Search ──
