@@ -1,4 +1,4 @@
-const CACHE = 'journal-v6';
+const CACHE = 'journal-v7';
 const FILES = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -16,6 +16,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Only cache same-origin GET requests; let Supabase/API calls pass through
+  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) {
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
