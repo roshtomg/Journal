@@ -468,6 +468,7 @@
         <input type="date" id="datePickerInput" onchange="goToPickedDate(this.value)">
         <button class="today-btn" onclick="openSearch()">Search</button>
         <button class="today-btn" onclick="goToToday()">Today</button>
+        <button class="today-btn" id="syncBtn" onclick="manualSync()" style="display:none">Sync</button>
         <button class="today-btn" id="signOutBtn" onclick="signOut()" style="display:none">Sign Out</button>
     </div>
 </nav>
@@ -514,7 +515,7 @@
     <div class="year-rows" id="yearRows"></div>
 
     <div class="page-footer">
-        <span>Entries save automatically</span>
+        <span id="footerSync">Entries save automatically</span>
         <span id="footerFill"></span>
     </div>
 </div>
@@ -523,9 +524,7 @@
     // ── Supabase ──
     const SUPABASE_URL = 'https://iuzsisanrlfbutdtwlqh.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_bLLqxn3HvgKym0azcX4fVw_9U_l7pNQ';
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-        auth: { flowType: 'implicit' }
-    });
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let currentUser = null;
 
     async function initAuth() {
@@ -553,8 +552,26 @@
         navUser.textContent = user.email[0].toUpperCase();
         navUser.classList.add('visible');
         document.getElementById('signOutBtn').style.display = '';
+        document.getElementById('syncBtn').style.display = '';
+        setFooterSync('Syncing…');
         await syncFromSupabase();
+        const { error } = await pushLocalToSupabase();
+        setFooterSync(error ? 'Sync error — check console' : 'Synced ' + new Date().toLocaleTimeString());
         render();
+    }
+
+    async function manualSync() {
+        if (!currentUser) return;
+        setFooterSync('Syncing…');
+        await syncFromSupabase();
+        const error = await pushLocalToSupabase();
+        setFooterSync(error ? 'Sync error — check console' : 'Synced ' + new Date().toLocaleTimeString());
+        render();
+    }
+
+    function setFooterSync(msg) {
+        const el = document.getElementById('footerSync');
+        if (el) el.textContent = msg;
     }
 
     async function signInWithGoogle() {
@@ -562,7 +579,7 @@
         msg.textContent = 'Redirecting…';
         const { error } = await sb.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.href }
+            options: { redirectTo: window.location.origin + window.location.pathname }
         });
         if (error) msg.textContent = error.message;
     }
@@ -584,12 +601,35 @@
         setData(local);
     }
 
-    async function syncEntryToSupabase(year, month, day, text) {
+    async function pushLocalToSupabase() {
         if (!currentUser) return;
-        await sb.from('entries').upsert(
+        const data = getData();
+        const rows = [];
+        for (const key in data) {
+            const parts = key.split('-');
+            const month = parseInt(parts[0]);
+            const day = parseInt(parts[1]);
+            for (const year in data[key]) {
+                const text = data[key][year];
+                if (text && text.trim()) {
+                    rows.push({ user_id: currentUser.id, year: parseInt(year), month, day, text, updated_at: new Date().toISOString() });
+                }
+            }
+        }
+        if (rows.length === 0) return null;
+        const { error } = await sb.from('entries').upsert(rows, { onConflict: 'user_id,month,day,year' });
+        if (error) console.error('Push local error:', error);
+        return error;
+    }
+
+    async function syncEntryToSupabase(year, month, day, text) {
+        if (!currentUser) return null;
+        const { error } = await sb.from('entries').upsert(
             { user_id: currentUser.id, year, month, day, text, updated_at: new Date().toISOString() },
             { onConflict: 'user_id,month,day,year' }
         );
+        if (error) console.error('Save error:', error);
+        return error;
     }
 
     const STORAGE_KEY = 'fiveYearJournal';
@@ -704,11 +744,25 @@
             ta.addEventListener('input', () => {
                 autoResize(ta);
                 clearTimeout(saveTimer);
-                saveTimer = setTimeout(() => {
-                    setEntry(year, viewMonth, viewDay, ta.value);
-                    indicator.classList.add('show');
-                    setTimeout(() => indicator.classList.remove('show'), 1200);
+                saveTimer = setTimeout(async () => {
+                    const data = getData();
+                    const key = `${viewMonth}-${viewDay}`;
+                    if (!data[key]) data[key] = {};
+                    data[key][year] = ta.value;
+                    setData(data);
                     updateFooter();
+                    indicator.textContent = 'saving…';
+                    indicator.style.color = '';
+                    indicator.classList.add('show');
+                    const err = await syncEntryToSupabase(year, viewMonth, viewDay, ta.value);
+                    if (err) {
+                        indicator.textContent = 'sync failed';
+                        indicator.style.color = '#c44';
+                        setTimeout(() => { indicator.classList.remove('show'); indicator.style.color = ''; }, 4000);
+                    } else {
+                        indicator.textContent = 'synced';
+                        setTimeout(() => indicator.classList.remove('show'), 1500);
+                    }
                 }, 400);
             });
 
@@ -851,6 +905,16 @@
             resultsEl.appendChild(div);
         });
     }
+
+    // Re-sync when tab becomes visible (picks up entries from other devices)
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && currentUser) {
+            setFooterSync('Syncing…');
+            await syncFromSupabase();
+            setFooterSync('Synced ' + new Date().toLocaleTimeString());
+            render();
+        }
+    });
 
     // Keyboard navigation
     document.addEventListener('keydown', e => {
